@@ -56,6 +56,9 @@ export const runTestCase = async (
   accessToken: string,
   version: ApiVersion
 ): Promise<TestResult> => {
+  if (baseUrl.endsWith("/")) {
+    baseUrl = baseUrl.slice(0, -1);
+  }
 
   // TODO: This should throw an error instead of returning a failed test result. This is not
   // something an end-user can correct, it can only be fixed by the developer.
@@ -80,12 +83,13 @@ export const runTestCase = async (
       mandatory: isMandatoryVersion(testCase, version),
       testKey: testCase.testKey,
       curlRequest: generateCurlCommand(
-        `${process.env.WEBHOOK_URL}/${testCase.endpoint}`, 
-        testCase.method, {
+        `${process.env.WEBHOOK_URL}/${testCase.endpoint}`,
+        testCase.method,
+        {
           "Content-Type": "application/json",
           Authorization: `Bearer TOKEN`,
-        }, 
-        "{ 'todo': '<TODO>' }" 
+        },
+        "{ 'todo': '<TODO>' }"
       ),
       documentationUrl: testCase.documentationUrl,
     };

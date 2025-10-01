@@ -270,7 +270,7 @@ export const generateV2TestCases = ({
       schema: undefined, // v2_0_EventFulfilledSchema
       mandatoryVersion: ["V2.2", "V2.3"],
       testKey: "TESTCASE#13",
-      documentationUrl: 
+      documentationUrl:
         "https://docs.carbon-transparency.org/pact-conformance-service/v3-test-cases-expected-results.html#test-case-13-respond-to-pcf-request-fulfilled-event",
     },
     {
@@ -296,7 +296,7 @@ export const generateV2TestCases = ({
       },
       mandatoryVersion: ["V2.2", "V2.3"],
       testKey: "TESTCASE#14.A",
-      documentationUrl: 
+      documentationUrl:
         "https://docs.carbon-transparency.org/pact-conformance-service/v3-test-cases-expected-results.html#test-case-14-respond-to-pcf-request-rejected-event",
     },
     {
@@ -307,7 +307,7 @@ export const generateV2TestCases = ({
       schema: undefined, // v2_0_EventRejectedSchema,
       mandatoryVersion: ["V2.2", "V2.3"],
       testKey: "TESTCASE#14.B",
-      documentationUrl: 
+      documentationUrl:
         "https://docs.carbon-transparency.org/pact-conformance-service/v3-test-cases-expected-results.html#test-case-14-respond-to-pcf-request-rejected-event",
     },
     {
@@ -330,7 +330,7 @@ export const generateV2TestCases = ({
       },
       mandatoryVersion: ["V2.2", "V2.3"],
       testKey: "TESTCASE#15",
-      documentationUrl: 
+      documentationUrl:
         "https://docs.carbon-transparency.org/pact-conformance-service/v2-test-cases-expected-results.html#test-case-15-receive-notification-of-pcf-update-published-event",
     },
     {

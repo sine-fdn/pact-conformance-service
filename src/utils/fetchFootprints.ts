@@ -5,6 +5,10 @@ export const fetchFootprints = async (
   accessToken: string,
   version: ApiVersion
 ) => {
+  if (baseUrl.endsWith("/")) {
+    baseUrl = baseUrl.slice(0, -1);
+  }
+
   const apiVersion = version.startsWith("V2") ? "2" : "3";
 
   const footprintsUrl = `${baseUrl}/${apiVersion}/footprints`;
@@ -68,4 +72,3 @@ const parseLinkHeader = (header: string | null): Record<string, string> => {
     return acc;
   }, {});
 };
-

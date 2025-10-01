@@ -58,6 +58,10 @@ export const getAccessToken = async (
   authRequestData: string,
   customAuthUrl?: string
 ): Promise<string> => {
+  if (baseUrl.endsWith("/")) {
+    baseUrl = baseUrl.slice(0, -1);
+  }
+
   const url = customAuthUrl || `${baseUrl}/auth/token`;
 
   const encodedCredentials = Buffer.from(
