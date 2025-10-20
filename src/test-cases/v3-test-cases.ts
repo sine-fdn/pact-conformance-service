@@ -13,6 +13,7 @@ import {
   getIncorrectAuthHeaders,
 } from "../utils/authUtils";
 import { v3_0_EventRejectedSchema } from "../schemas/v3_0_schema";
+import { joinUrl } from "../utils/urlUtils";
 
 interface Footprint {
   id: string;
@@ -143,7 +144,7 @@ export const generateV3TestCases = ({
     {
       name: "Test Case 1: Obtain auth token with valid credentials",
       method: "POST",
-      customUrl: oidAuthUrl || `${authBaseUrl}/auth/token`,
+      customUrl: oidAuthUrl || joinUrl(authBaseUrl, "/auth/token"),
       requestData: authRequestData,
       expectedStatusCodes: [200],
       headers: getCorrectAuthHeaders(baseUrl, clientId, clientSecret),
@@ -155,7 +156,7 @@ export const generateV3TestCases = ({
     {
       name: "Test Case 2: Obtain auth token with invalid credentials",
       method: "POST",
-      customUrl: oidAuthUrl || `${authBaseUrl}/auth/token`,
+      customUrl: oidAuthUrl || joinUrl(authBaseUrl, "/auth/token"),
       requestData: authRequestData,
       expectedStatusCodes: [400, 401],
       headers: getIncorrectAuthHeaders(baseUrl),
@@ -261,7 +262,7 @@ export const generateV3TestCases = ({
       name: "Test Case 9: Attempt Authentication through HTTP (non-HTTPS)",
       customUrl:
         oidAuthUrl?.replace("https", "http") ||
-        `${authBaseUrl.replace("https", "http")}/auth/token`,
+        joinUrl(authBaseUrl.replace("https", "http"), "/auth/token"),
       method: "POST",
       headers: getCorrectAuthHeaders(baseUrl, clientId, clientSecret),
       mandatoryVersion: ["V3.0"],
@@ -274,7 +275,7 @@ export const generateV3TestCases = ({
     {
       name: "Test Case 10: Attempt ListFootprints through HTTP (non-HTTPS)",
       method: "GET",
-      customUrl: `${baseUrl.replace("https", "http")}/3/footprints`,
+      customUrl: joinUrl(baseUrl.replace("https", "http"), "/3/footprints"),
       mandatoryVersion: ["V3.0"],
       expectHttpError: true,
       testKey: "TESTCASE#10",
@@ -284,9 +285,10 @@ export const generateV3TestCases = ({
     {
       name: "Test Case 11: Attempt GetFootprint through HTTP (non-HTTPS)",
       method: "GET",
-      customUrl: `${baseUrl.replace("https", "http")}/3/footprints/${
-        filterParams.id
-      }`,
+      customUrl: joinUrl(
+        baseUrl.replace("https", "http"),
+        `/3/footprints/${filterParams.id}`
+      ),
       mandatoryVersion: ["V3.0"],
       expectHttpError: true,
       testKey: "TESTCASE#11",
@@ -320,7 +322,7 @@ export const generateV3TestCases = ({
     {
       name: "Test Case 13: Received Request Fulfilled Response",
       callback: true,
-      customUrl: `${callbackBaseUrl}/3/events`,
+      customUrl: joinUrl(callbackBaseUrl, "/3/events"),
       headers: {
         "Content-Type": "application/cloudevents+json; charset=UTF-8",
         "Authorization": "Bearer TOKEN"
@@ -358,7 +360,7 @@ export const generateV3TestCases = ({
     {
       name: "Test Case 14.B: Handle Rejected PCF Request",
       callback: true,
-      customUrl: `${callbackBaseUrl}/3/events`,
+      customUrl: joinUrl(callbackBaseUrl, "/3/events"),
       headers: {
         "Content-Type": "application/cloudevents+json; charset=UTF-8",
         "Authorization": "Bearer TOKEN"
@@ -426,7 +428,7 @@ export const generateV3TestCases = ({
     {
       name: "Test Case 17: Attempt Action Events through HTTP (non-HTTPS)",
       method: "POST",
-      customUrl: `${baseUrl.replace("https", "http")}/3/events`,
+      customUrl: joinUrl(baseUrl.replace("https", "http"), "/3/events"),
       requestData: {
         specversion: "1.0",
         id: testRunId,
