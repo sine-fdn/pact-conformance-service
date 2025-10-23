@@ -103,7 +103,9 @@ export const getOidAuthUrl = async (
   baseUrl: string
 ): Promise<string | undefined> => {
   try {
-    const response = await fetch(joinUrl(baseUrl, "/.well-known/openid-configuration"));
+    const response = await fetch(
+      joinUrl(baseUrl, "/.well-known/openid-configuration")
+    );
     if (!response.ok) {
       return;
     }

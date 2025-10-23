@@ -147,7 +147,9 @@ export const generateV2TestCases = ({
       expectedStatusCodes: [400, 401],
       condition: (body, messages) => {
         if (body?.code !== "BadRequest") {
-          messages.push(`Warning: expected error code BadRequest but received ${body?.code}`);
+          messages.push(
+            `Warning: expected error code BadRequest but received ${body?.code}`
+          );
         }
         return true;
       },
@@ -166,7 +168,9 @@ export const generateV2TestCases = ({
       expectedStatusCodes: [400, 401],
       condition: (body, messages) => {
         if (body?.code !== "BadRequest") {
-          messages.push(`Warning: expected error code BadRequest but received ${body?.code}`);
+          messages.push(
+            `Warning: expected error code BadRequest but received ${body?.code}`
+          );
         }
         return true;
       },
@@ -239,7 +243,7 @@ export const generateV2TestCases = ({
       expectedStatusCodes: [200],
       requestData: {
         specversion: "1.0",
-        id: testRunId + "-12",  // Create a unique ID for this event which we can trace back to the test run
+        id: testRunId + "-12", // Create a unique ID for this event which we can trace back to the test run
         source: webhookUrl,
         time: new Date().toISOString(),
         type: EventTypesV2.CREATED,
@@ -258,7 +262,7 @@ export const generateV2TestCases = ({
     {
       name: "Test Case 13: Received Request Fulfilled Response",
       callback: true,
-      endpoint: '/2/events',
+      endpoint: "/2/events",
       method: "POST",
       schema: undefined, // v2_0_EventFulfilledSchema
       mandatoryVersion: ["V2.2", "V2.3"],
@@ -276,7 +280,7 @@ export const generateV2TestCases = ({
       expectedStatusCodes: [200],
       requestData: {
         specversion: "1.0",
-        id: testRunId + "-14.A",  // Create a unique ID for this event which we can trace back to the test run
+        id: testRunId + "-14.A", // Create a unique ID for this event which we can trace back to the test run
         source: webhookUrl,
         time: new Date().toISOString(),
         type: EventTypesV2.CREATED,
@@ -295,7 +299,7 @@ export const generateV2TestCases = ({
     {
       name: "Test Case 14.B: Handle Rejected PCF Request",
       callback: true,
-      endpoint: '/2/events',
+      endpoint: "/2/events",
       method: "POST",
       schema: undefined, // v2_0_EventRejectedSchema,
       mandatoryVersion: ["V2.2", "V2.3"],

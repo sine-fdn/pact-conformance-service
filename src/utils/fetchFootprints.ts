@@ -49,14 +49,12 @@ export const getLinksHeaderFromFootprints = async (
   const apiVersion = version.startsWith("V2") ? "2" : "3";
 
   const paginationUrl = joinUrl(baseUrl, `/${apiVersion}/footprints?limit=1`);
-  console.log("Fetching pagination URL:", paginationUrl);
 
   const response = await fetch(paginationUrl, {
     headers: {
       Authorization: `Bearer ${accessToken}`,
     },
   });
-  console.log("Response:", response);
   const linksHeader = response.headers.get("Link");
 
   return parseLinkHeader(linksHeader);
