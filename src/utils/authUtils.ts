@@ -1,4 +1,5 @@
 import logger from "./logger";
+import { joinUrl } from "./urlUtils";
 
 // See https://docs.carbon-transparency.org/v2/#authresponsebody
 export interface TokenResponse {
@@ -58,11 +59,9 @@ export const getAccessToken = async (
   authRequestData: string,
   customAuthUrl?: string
 ): Promise<string> => {
-  if (baseUrl.endsWith("/")) {
-    baseUrl = baseUrl.slice(0, -1);
-  }
+  const url = customAuthUrl || joinUrl(baseUrl, "/auth/token");
 
-  const url = customAuthUrl || `${baseUrl}/auth/token`;
+  console.log("Auth URL:", url);
 
   const encodedCredentials = Buffer.from(
     `${clientId}:${clientSecret}`
@@ -104,7 +103,9 @@ export const getOidAuthUrl = async (
   baseUrl: string
 ): Promise<string | undefined> => {
   try {
-    const response = await fetch(`${baseUrl}/.well-known/openid-configuration`);
+    const response = await fetch(
+      joinUrl(baseUrl, "/.well-known/openid-configuration")
+    );
     if (!response.ok) {
       return;
     }

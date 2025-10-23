@@ -16,6 +16,7 @@ import {
   getCorrectAuthHeaders,
   getIncorrectAuthHeaders,
 } from "../utils/authUtils";
+import { joinUrl } from "../utils/urlUtils";
 
 export const generateV2TestCases = ({
   testRunId,
@@ -77,7 +78,7 @@ export const generateV2TestCases = ({
     {
       name: "Test Case 1: Obtain auth token with valid credentials",
       method: "POST",
-      customUrl: oidAuthUrl || `${authBaseUrl}/auth/token`,
+      customUrl: oidAuthUrl || joinUrl(authBaseUrl, "/auth/token"),
       requestData: authRequestData,
       expectedStatusCodes: [200],
       headers: getCorrectAuthHeaders(baseUrl, clientId, clientSecret),
@@ -89,7 +90,7 @@ export const generateV2TestCases = ({
     {
       name: "Test Case 2: Obtain auth token with invalid credentials",
       method: "POST",
-      customUrl: oidAuthUrl || `${authBaseUrl}/auth/token`,
+      customUrl: oidAuthUrl || joinUrl(authBaseUrl, "/auth/token"),
       requestData: authRequestData,
       expectedStatusCodes: [400, 401],
       headers: getIncorrectAuthHeaders(baseUrl),
@@ -146,7 +147,9 @@ export const generateV2TestCases = ({
       expectedStatusCodes: [400, 401],
       condition: (body, messages) => {
         if (body?.code !== "BadRequest") {
-          messages.push(`Warning: expected error code BadRequest but received ${body?.code}`);
+          messages.push(
+            `Warning: expected error code BadRequest but received ${body?.code}`
+          );
         }
         return true;
       },
@@ -165,7 +168,9 @@ export const generateV2TestCases = ({
       expectedStatusCodes: [400, 401],
       condition: (body, messages) => {
         if (body?.code !== "BadRequest") {
-          messages.push(`Warning: expected error code BadRequest but received ${body?.code}`);
+          messages.push(
+            `Warning: expected error code BadRequest but received ${body?.code}`
+          );
         }
         return true;
       },
@@ -195,7 +200,7 @@ export const generateV2TestCases = ({
       name: "Test Case 9: Attempt Authentication through HTTP (non-HTTPS)",
       customUrl:
         oidAuthUrl?.replace("https", "http") ||
-        `${authBaseUrl.replace("https", "http")}/auth/token`,
+        joinUrl(authBaseUrl.replace("https", "http"), "/auth/token"),
       method: "POST",
       headers: getCorrectAuthHeaders(baseUrl, clientId, clientSecret),
       mandatoryVersion: ["V2.0", "V2.1", "V2.2", "V2.3"],
@@ -208,7 +213,7 @@ export const generateV2TestCases = ({
     {
       name: "Test Case 10: Attempt ListFootprints through HTTP (non-HTTPS)",
       method: "GET",
-      customUrl: `${baseUrl.replace("https", "http")}/2/footprints`,
+      customUrl: joinUrl(baseUrl.replace("https", "http"), "/2/footprints"),
       mandatoryVersion: ["V2.0", "V2.1", "V2.2", "V2.3"],
       expectHttpError: true,
       testKey: "TESTCASE#10",
@@ -218,9 +223,10 @@ export const generateV2TestCases = ({
     {
       name: "Test Case 11: Attempt GetFootprint through HTTP (non-HTTPS)",
       method: "GET",
-      customUrl: `${baseUrl.replace("https", "http")}/2/footprints/${
-        footprints.data[0].id
-      }`,
+      customUrl: joinUrl(
+        baseUrl.replace("https", "http"),
+        `/2/footprints/${footprints.data[0].id}`
+      ),
       mandatoryVersion: ["V2.0", "V2.1", "V2.2", "V2.3"],
       expectHttpError: true,
       testKey: "TESTCASE#11",
@@ -237,7 +243,7 @@ export const generateV2TestCases = ({
       expectedStatusCodes: [200],
       requestData: {
         specversion: "1.0",
-        id: testRunId + "-12",  // Create a unique ID for this event which we can trace back to the test run
+        id: testRunId + "-12", // Create a unique ID for this event which we can trace back to the test run
         source: webhookUrl,
         time: new Date().toISOString(),
         type: EventTypesV2.CREATED,
@@ -256,7 +262,7 @@ export const generateV2TestCases = ({
     {
       name: "Test Case 13: Received Request Fulfilled Response",
       callback: true,
-      endpoint: '/2/events',
+      endpoint: "/2/events",
       method: "POST",
       schema: undefined, // v2_0_EventFulfilledSchema
       mandatoryVersion: ["V2.2", "V2.3"],
@@ -274,7 +280,7 @@ export const generateV2TestCases = ({
       expectedStatusCodes: [200],
       requestData: {
         specversion: "1.0",
-        id: testRunId + "-14.A",  // Create a unique ID for this event which we can trace back to the test run
+        id: testRunId + "-14.A", // Create a unique ID for this event which we can trace back to the test run
         source: webhookUrl,
         time: new Date().toISOString(),
         type: EventTypesV2.CREATED,
@@ -293,7 +299,7 @@ export const generateV2TestCases = ({
     {
       name: "Test Case 14.B: Handle Rejected PCF Request",
       callback: true,
-      endpoint: '/2/events',
+      endpoint: "/2/events",
       method: "POST",
       schema: undefined, // v2_0_EventRejectedSchema,
       mandatoryVersion: ["V2.2", "V2.3"],
@@ -354,7 +360,7 @@ export const generateV2TestCases = ({
     {
       name: "Test Case 17: Attempt Action Events through HTTP (non-HTTPS)",
       method: "POST",
-      customUrl: `${baseUrl.replace("https", "http")}/2/events`,
+      customUrl: joinUrl(baseUrl.replace("https", "http"), "/2/events"),
       requestData: {
         specversion: "1.0",
         id: testRunId + "-17",

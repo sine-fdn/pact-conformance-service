@@ -8,6 +8,7 @@ import {
   TestCaseResultStatus,
 } from "../types/types";
 import logger from "./logger";
+import { joinUrl } from "./urlUtils";
 
 // Setup timeout for the fetch request
 const DEFAULT_FETCH_TIMEOUT_MS = parseInt(
@@ -56,12 +57,8 @@ export const runTestCase = async (
   accessToken: string,
   version: ApiVersion
 ): Promise<TestResult> => {
-  if (baseUrl.endsWith("/")) {
-    baseUrl = baseUrl.slice(0, -1);
-  }
-
   // Determine the full URL for the request
-  const url = testCase.customUrl || `${baseUrl}${testCase.endpoint}`;
+  const url = testCase.customUrl || joinUrl(baseUrl, testCase.endpoint);
 
   // Determine headers and body for curl command generation
   const headers = {
