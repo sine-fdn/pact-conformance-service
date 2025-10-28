@@ -7,6 +7,7 @@ import {
   v3_0_ResponseSchema,
   V3_0_SingleFootprintResponseSchema,
   v3_0_EventFulfilledSchema,
+  authTokenResponseSchema
 } from "../schemas/responseSchema";
 import {
   getCorrectAuthHeaders,
@@ -267,6 +268,8 @@ export const generateV3TestCases = ({
       headers: getCorrectAuthHeaders(baseUrl, clientId, clientSecret),
       mandatoryVersion: ["V3.0"],
       expectHttpError: true,
+      expectedStatusCodes: [200],
+      schema: authTokenResponseSchema,
       testKey: "TESTCASE#9",
       documentationUrl:
         "https://docs.carbon-transparency.org/pact-conformance-service/v3-test-cases-expected-results.html#test-case-9-attempt-authentication-through-http-non-https",
@@ -278,6 +281,8 @@ export const generateV3TestCases = ({
       customUrl: joinUrl(baseUrl.replace("https", "http"), "/3/footprints"),
       mandatoryVersion: ["V3.0"],
       expectHttpError: true,
+      expectedStatusCodes: [200, 202],
+      schema: responseSchema,
       testKey: "TESTCASE#10",
       documentationUrl:
         "https://docs.carbon-transparency.org/pact-conformance-service/v3-test-cases-expected-results.html#test-case-10-attempt-listfootprints-through-http-non-https",
@@ -291,6 +296,8 @@ export const generateV3TestCases = ({
       ),
       mandatoryVersion: ["V3.0"],
       expectHttpError: true,
+      expectedStatusCodes: [200],
+      schema: V3_0_SingleFootprintResponseSchema,
       testKey: "TESTCASE#11",
       documentationUrl:
         "https://docs.carbon-transparency.org/pact-conformance-service/v3-test-cases-expected-results.html#test-case-11-attempt-getfootprint-through-http-non-https",
@@ -448,6 +455,7 @@ export const generateV3TestCases = ({
       },
       mandatoryVersion: ["V3.0"],
       expectHttpError: true,
+      expectedStatusCodes: [200],
       testKey: "TESTCASE#17",
       documentationUrl:
         "https://docs.carbon-transparency.org/pact-conformance-service/v3-test-cases-expected-results.html#test-case-17-attempt-action-events-through-http-non-https",
