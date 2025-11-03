@@ -6,15 +6,10 @@ import {
   TestCase,
   TestResult,
   TestCaseResultStatus,
-} from "../types/types";
+} from "../services/types";
+import config from "../config";
 import logger from "./logger";
 import { joinUrl } from "./urlUtils";
-
-// Setup timeout for the fetch request
-const DEFAULT_FETCH_TIMEOUT_MS = parseInt(
-  process.env.FETCH_TIMEOUT_MS || "5000",
-  10
-);
 
 const isMandatoryVersion = (testCase: TestCase, version: ApiVersion) => {
   if (testCase.mandatoryVersion) {
@@ -118,7 +113,7 @@ export const runTestCase = async (
       method: testCase.method,
       body: body,
       headers: headers,
-      signal: AbortSignal.timeout(DEFAULT_FETCH_TIMEOUT_MS),
+      signal: AbortSignal.timeout(config.TESTCASE_TIMEOUT),
     });
     status = response.status;
     text = await response.text();
@@ -128,7 +123,7 @@ export const runTestCase = async (
   }
   catch (error: any) {
     if (error.name === "AbortError"){
-      result.errorMessage = `Request timeout after ${DEFAULT_FETCH_TIMEOUT_MS}ms`;
+      result.errorMessage = `Request timeout after ${config.TESTCASE_TIMEOUT}ms`;
     } else {
       result.errorMessage = error.message;
     }

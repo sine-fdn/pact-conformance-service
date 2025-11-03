@@ -1,4 +1,4 @@
-import { ApiVersion, TestCase, EventTypesV3 } from "../types/types";
+import { ApiVersion, TestCase, EventTypesV3 } from "../services/types";
 import { randomUUID } from "crypto";
 import { randomString } from "../utils/authUtils";
 import {
@@ -109,8 +109,7 @@ export const generateV3TestCases = ({
   footprints,
   paginationLinks,
   baseUrl,
-  authBaseUrl,
-  oidAuthUrl,
+  authTokenUrl,
   clientId,
   clientSecret,
   authRequestData,
@@ -121,8 +120,7 @@ export const generateV3TestCases = ({
   footprints: any;
   paginationLinks: Record<string, string>;
   baseUrl: string;
-  authBaseUrl: string;
-  oidAuthUrl: string | null | undefined;
+  authTokenUrl: string;
   clientId: string;
   clientSecret: string;
   authRequestData: string;
@@ -145,7 +143,7 @@ export const generateV3TestCases = ({
     {
       name: "Test Case 1: Obtain auth token with valid credentials",
       method: "POST",
-      customUrl: oidAuthUrl || joinUrl(authBaseUrl, "/auth/token"),
+      customUrl: authTokenUrl,
       requestData: authRequestData,
       expectedStatusCodes: [200],
       headers: getCorrectAuthHeaders(baseUrl, clientId, clientSecret),
@@ -157,7 +155,7 @@ export const generateV3TestCases = ({
     {
       name: "Test Case 2: Obtain auth token with invalid credentials",
       method: "POST",
-      customUrl: oidAuthUrl || joinUrl(authBaseUrl, "/auth/token"),
+      customUrl: authTokenUrl,
       requestData: authRequestData,
       expectedStatusCodes: [400, 401],
       headers: getIncorrectAuthHeaders(baseUrl),
@@ -261,9 +259,7 @@ export const generateV3TestCases = ({
     },
     {
       name: "Test Case 9: Attempt Authentication through HTTP (non-HTTPS)",
-      customUrl:
-        oidAuthUrl?.replace("https", "http") ||
-        joinUrl(authBaseUrl.replace("https", "http"), "/auth/token"),
+      customUrl: authTokenUrl.replace("https", "http"),
       method: "POST",
       headers: getCorrectAuthHeaders(baseUrl, clientId, clientSecret),
       mandatoryVersion: ["V3.0"],
@@ -314,7 +310,7 @@ export const generateV3TestCases = ({
         specversion: "1.0",
         // Create a unique ID for this event which we can trace back to the test run,
         // when a callback is received.
-        id: testRunId + "-12",  
+        id: testRunId + "-12",
         source: webhookUrl,
         time: new Date().toISOString(),
         type: EventTypesV3.CREATED,
@@ -326,7 +322,7 @@ export const generateV3TestCases = ({
       mandatoryVersion: ["V3.0"],
       testKey: "TESTCASE#12",
       documentationUrl:
-        "https://docs.carbon-transparency.org/pact-conformance-service/v3-test-cases-expected-results.html#test-case-12-receive-asynchronous-pcf-request",
+        "https://docs.carbon-transparency.org/pact-conformance-service/v3-test-cases-expected-results.html#test-case-12-send-pcf-creation-request-async",
     },
     {
       name: "Test Case 13: Received Request Fulfilled Response",
@@ -340,7 +336,8 @@ export const generateV3TestCases = ({
       schema: v3_0_EventFulfilledSchema,
       mandatoryVersion: ["V3.0"],
       testKey: "TESTCASE#13",
-      documentationUrl: "https://docs.carbon-transparency.org/pact-conformance-service/v3-test-cases-expected-results.html#test-case-13-respond-to-pcf-request-fulfilled-event",
+      documentationUrl:
+        "https://docs.carbon-transparency.org/pact-conformance-service/v3-test-cases-expected-results.html#test-case-13-call-back-with-a-request-fulfilled-event",
     },
     {
       name: "Test Case 14.A: Send Asynchronous Request to be Rejected",
@@ -365,8 +362,8 @@ export const generateV3TestCases = ({
       },
       mandatoryVersion: ["V3.0"],
       testKey: "TESTCASE#14.A",
-      documentationUrl: 
-        "https://docs.carbon-transparency.org/pact-conformance-service/v3-test-cases-expected-results.html#test-case-14-respond-to-pcf-request-rejected-event",
+      documentationUrl:
+        "https://docs.carbon-transparency.org/pact-conformance-service/v3-test-cases-expected-results.html#test-case-14a-request-for-the-creation-of-a-pcf-to-be-rejected",
     },
     {
       name: "Test Case 14.B: Handle Rejected PCF Request",
@@ -380,8 +377,8 @@ export const generateV3TestCases = ({
       schema: v3_0_EventRejectedSchema,
       mandatoryVersion: ["V3.0"],
       testKey: "TESTCASE#14.B",
-      documentationUrl: 
-        "https://docs.carbon-transparency.org/pact-conformance-service/v3-test-cases-expected-results.html#test-case-14-respond-to-pcf-request-rejected-event",
+      documentationUrl:
+        "https://docs.carbon-transparency.org/pact-conformance-service/v3-test-cases-expected-results.html#test-case-14b-call-back-with-a-request-rejected-event",
     },
     {
       name: "Test Case 15: Receive Notification of PCF Update (Published Event)",
@@ -463,7 +460,7 @@ export const generateV3TestCases = ({
     {
       name: "Test Case 18: OpenId Connect-based Authentication Flow",
       method: "POST",
-      customUrl: oidAuthUrl || undefined,
+      customUrl: authTokenUrl.startsWith(baseUrl) ? undefined : authTokenUrl, // Skip if authTokenUrl is under the baseUrl, will not be an OpenID provider then
       expectedStatusCodes: [200],
       headers: getCorrectAuthHeaders(baseUrl, clientId, clientSecret),
       testKey: "TESTCASE#18",
@@ -474,7 +471,7 @@ export const generateV3TestCases = ({
     {
       name: "Test Case 19: OpenId connect-based authentication flow with incorrect credentials",
       method: "POST",
-      customUrl: oidAuthUrl || undefined,
+      customUrl: authTokenUrl.startsWith(baseUrl) ? undefined : authTokenUrl, // Skip if authTokenUrl is under the baseUrl, will not be an OpenID provider then
       expectedStatusCodes: [400, 401],
       headers: getIncorrectAuthHeaders(baseUrl),
       testKey: "TESTCASE#19",

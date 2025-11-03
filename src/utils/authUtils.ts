@@ -53,23 +53,18 @@ export const getCorrectAuthHeaders = (
  * Retrieves an access token from the authentication endpoint.
  */
 export const getAccessToken = async (
-  baseUrl: string,
+  authTokenEndPointUrl: string,
   clientId: string,
   clientSecret: string,
-  authRequestData: string,
-  customAuthUrl?: string
+  authRequestData: string
 ): Promise<string> => {
-  const url = customAuthUrl || joinUrl(baseUrl, "/auth/token");
-
-  console.log("Auth URL:", url);
-
   const encodedCredentials = Buffer.from(
     `${clientId}:${clientSecret}`
   ).toString("base64");
 
-  logger.info(`Requesting access token from ${url} with clientId: ${clientId}`);
+  logger.info(`Requesting access token from ${authTokenEndPointUrl} with clientId: ${clientId}`);
 
-  const response = await fetch(url, {
+  const response = await fetch(authTokenEndPointUrl, {
     method: "POST",
     headers: {
       Accept: "application/json",
@@ -81,11 +76,11 @@ export const getAccessToken = async (
 
   if (!response.ok) {
     logger.error(
-      `Failed to obtain access token from ${url}. Status: ${response.status}`
+      `Failed to obtain access token from ${authTokenEndPointUrl}. Status: ${response.status}`
     );
 
     throw new Error(
-      `Failed to obtain access token from ${url}. Status: ${
+      `Failed to obtain access token from ${authTokenEndPointUrl}. Status: ${
         response.status
       }. Response: ${await response.text()}`
     );
@@ -98,20 +93,17 @@ export const getAccessToken = async (
   return data.access_token;
 };
 
-// Get token_endpoint from .well-known endpoint
-export const getOidAuthUrl = async (
-  baseUrl: string
-): Promise<string | undefined> => {
+// Get OpenID token_endpoint from .well-known configureation lookup
+export const fetchOpenIdTokenEndpoint = async (authBaseUrl: string): Promise<string | undefined> => {
   try {
-    const response = await fetch(
-      joinUrl(baseUrl, "/.well-known/openid-configuration")
-    );
-    if (!response.ok) {
-      return;
+    const response = await fetch(`${authBaseUrl}/.well-known/openid-configuration`);
+    if (response.ok) {
+      const data = await response.json();
+      return data.token_endpoint;
     }
-    const data = await response.json();
-    return data.token_endpoint;
-  } catch (error) {
-    return;
+  } catch {
+    // No OpenID configuration available, ignore error and return undefined
   }
+  logger.info(`No OpenID configuration found at ${authBaseUrl}/.well-known/openid-configuration`);
+  return undefined;
 };

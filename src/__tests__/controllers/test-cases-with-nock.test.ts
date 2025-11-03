@@ -1,19 +1,18 @@
 import { Request, Response } from "express";
+import config from "../../config";
 import nock from "nock";
-import * as dbUtils from "../../utils/dbUtils";
-import { mockFootprints, mockFootprintsV3 } from "../mocks/footprints";
+import { mockFootprintsV2, mockFootprintsV3 } from "../mocks/footprints";
 import { TestRunController } from "../../controllers/TestRunController"; // Adjust the path as needed
+import { TestStorage } from "../../services/types";
+import { TestRunWorker } from "../../services/test-run-worker";
 
 // Mock the environment variables
-process.env.WEBHOOK_URL = "https://webhook.test.url";
+config.CONFORMANCE_API = "https://webhook.test.url";
 
 // Mock the UUID generation to get consistent test IDs
 jest.mock("crypto", () => ({
   randomUUID: jest.fn().mockReturnValue("test-uuid-1234"),
 }));
-
-// Mock the DB utils
-jest.mock("../../utils/dbUtils");
 
 interface TestResult {
   status: string;
@@ -23,11 +22,11 @@ interface TestResult {
 
 beforeAll(() => {
   // Mock the console.log to avoid cluttering test output
-  jest.spyOn(console, "log").mockImplementation(() => {});
-  jest.spyOn(console, "error").mockImplementation(() => {});
+  jest.spyOn(console, "log").mockImplementation(() => { });
+  jest.spyOn(console, "error").mockImplementation(() => { });
 });
 
-describe("runTestCases Lambda handler with nock", () => {
+describe("TestRunController nock tests", () => {
   const mockBaseUrl = "https://api.example.com";
   const mockHttpBaseUrl = "http://api.example.com";
   const mockAuthBaseUrl = "https://auth.example.com";
@@ -38,6 +37,7 @@ describe("runTestCases Lambda handler with nock", () => {
   const mockAccessToken = "mock-access-token-12345";
 
   let controller: TestRunController;
+  let mockDb: jest.Mocked<TestStorage>;
   let mockRequest: Partial<Request>;
   let mockResponse: Partial<Response>;
 
@@ -46,24 +46,50 @@ describe("runTestCases Lambda handler with nock", () => {
     jest.clearAllMocks();
     nock.cleanAll();
 
+
+    // Create a mocked TestRunRepository
+    mockDb = {
+      saveTestRun: jest.fn(),
+      updateTestRunStatus: jest.fn(),
+      saveTestCaseResult: jest.fn(),
+      saveTestCaseResults: jest.fn(),
+      getTestResults: jest.fn(),
+      saveTestData: jest.fn(),
+      getTestData: jest.fn(),
+      listTestRuns: jest.fn(),
+      searchTestRuns: jest.fn(),
+    } as jest.Mocked<TestStorage>;
+
+    const worker = new TestRunWorker(mockDb); // Initialize the worker with the mocked DB
+
     // Setup mock request and response
     mockRequest = {
       query: {},
       params: {},
-      body: {}
+      body: {},
+      app: {
+        locals: {
+          services: {
+            repository: mockDb,
+            worker: worker
+          }
+        }
+      } as any
     };
     mockResponse = {
       status: jest.fn().mockReturnThis(),
       json: jest.fn().mockReturnThis(),
+      send: jest.fn().mockReturnThis(),
     };
 
     // Setup controller to be tested
     controller = new TestRunController();
 
     // Mock DB utility functions
-    (dbUtils.saveTestRun as jest.Mock).mockResolvedValue(undefined);
-    (dbUtils.saveTestData as jest.Mock).mockResolvedValue(undefined);
-    (dbUtils.saveTestCaseResults as jest.Mock).mockResolvedValue(undefined);
+    // (mockDb.saveTestRun as jest.Mock).mockResolvedValue(undefined);
+    (mockDb.saveTestRun as jest.Mock).mockImplementation(async (data) => data);
+    (mockDb.saveTestData as jest.Mock).mockResolvedValue(undefined);
+    (mockDb.saveTestCaseResults as jest.Mock).mockResolvedValue(undefined);
   });
 
   afterEach(() => {
@@ -87,8 +113,8 @@ describe("runTestCases Lambda handler with nock", () => {
       .matchHeader("authorization", (value: string): boolean => {
         return Boolean(
           value &&
-            typeof value === "string" &&
-            value.includes("very-invalid-access-token")
+          typeof value === "string" &&
+          value.includes("very-invalid-access-token")
         );
       })
       .reply(400, { code: "BadRequest", message: "Invalid token" })
@@ -102,8 +128,8 @@ describe("runTestCases Lambda handler with nock", () => {
       .matchHeader("authorization", (value: string): boolean => {
         return Boolean(
           value &&
-            typeof value === "string" &&
-            value.includes("very-invalid-access-token")
+          typeof value === "string" &&
+          value.includes("very-invalid-access-token")
         );
       })
       .reply(400, { code: "BadRequest", message: "Invalid token" })
@@ -115,8 +141,8 @@ describe("runTestCases Lambda handler with nock", () => {
       .matchHeader("authorization", (value: string): boolean => {
         return Boolean(
           value &&
-            typeof value === "string" &&
-            value.includes("very-invalid-access-token")
+          typeof value === "string" &&
+          value.includes("very-invalid-access-token")
         );
       })
       .reply(400, { code: "BadRequest", message: "Invalid token" })
@@ -174,22 +200,22 @@ describe("runTestCases Lambda handler with nock", () => {
     // Mock for Test Case 3: GetFootprint
     persistentNock(mockBaseUrl)
       .get("/2/footprints/123e4567-e89b-12d3-a456-426614174000")
-      .reply(200, { data: mockFootprints.data[0] });
+      .reply(200, { data: mockFootprintsV2.data[0] });
 
     // Mock for Test Case 4: ListFootprints
-    persistentNock(mockBaseUrl).get("/2/footprints").reply(200, mockFootprints);
+    persistentNock(mockBaseUrl).get("/2/footprints").reply(200, mockFootprintsV2);
 
     // Mock for Test Case 5: Pagination with limit parameter
     persistentNock(mockBaseUrl)
       .get("/2/footprints?limit=1")
-      .reply(200, mockFootprints, {
+      .reply(200, mockFootprintsV2, {
         Link: `<${mockBaseUrl}/2/footprints?offset=2&limit=1>; rel="next"`,
       });
 
     // Mock for Test Case 5: Pagination
     persistentNock(mockBaseUrl)
       .get("/2/footprints?offset=2&limit=1")
-      .reply(200, mockFootprints);
+      .reply(200, mockFootprintsV2);
 
     // Mock for Test Case 8: Non-existent footprint
     persistentNock(mockBaseUrl)
@@ -218,7 +244,7 @@ describe("runTestCases Lambda handler with nock", () => {
     // Mock for Test Case 19: Filtered list
     persistentNock(mockBaseUrl)
       .get(/\/2\/footprints\?\$filter=/)
-      .reply(200, mockFootprints);
+      .reply(200, mockFootprintsV2);
 
     // Non https mocks
     persistentNock(mockHttpBaseUrl)
@@ -243,16 +269,16 @@ describe("runTestCases Lambda handler with nock", () => {
       clientId: mockClientId,
       clientSecret: mockClientSecret,
       version: "V2.3",
-      companyName: "Test Company",
+      organizationName: "Test Company",
       adminEmail: "admin@test.com",
       adminName: "Admin Test",
       customAuthBaseUrl: mockAuthBaseUrl,
     };
 
-    // Run the lambda handler
+    // Run the controller
     await controller.createTestRun(mockRequest as Request, mockResponse as Response);
 
-    // We'll consider the test passing if the lambda handler returns without throwing
+    // We'll consider the test passing if the controller returns without throwing
     expect(mockResponse.status).toBeDefined();
     const body = (mockResponse.json as jest.Mock).mock.calls[0][0]
 
@@ -292,8 +318,8 @@ describe("runTestCases Lambda handler with nock", () => {
       .matchHeader("authorization", (value: string): boolean => {
         return Boolean(
           value &&
-            typeof value === "string" &&
-            value.includes("very-invalid-access-token")
+          typeof value === "string" &&
+          value.includes("very-invalid-access-token")
         );
       })
       .reply(400, { code: "BadRequest", message: "Invalid token" })
@@ -307,8 +333,8 @@ describe("runTestCases Lambda handler with nock", () => {
       .matchHeader("authorization", (value: string): boolean => {
         return Boolean(
           value &&
-            typeof value === "string" &&
-            value.includes("very-invalid-access-token")
+          typeof value === "string" &&
+          value.includes("very-invalid-access-token")
         );
       })
       .reply(400, { code: "BadRequest", message: "Invalid token" })
@@ -320,8 +346,8 @@ describe("runTestCases Lambda handler with nock", () => {
       .matchHeader("authorization", (value: string): boolean => {
         return Boolean(
           value &&
-            typeof value === "string" &&
-            value.includes("very-invalid-access-token")
+          typeof value === "string" &&
+          value.includes("very-invalid-access-token")
         );
       })
       .reply(400, { code: "BadRequest", message: "Invalid token" })
@@ -557,16 +583,16 @@ describe("runTestCases Lambda handler with nock", () => {
       clientId: mockClientId,
       clientSecret: mockClientSecret,
       version: "V3.0",
-      companyName: "Test Company",
+      organizationName: "Test Company",
       adminEmail: "admin@test.com",
       adminName: "Admin Test",
       customAuthBaseUrl: mockAuthBaseUrl,
     };
 
-    // Run the lambda handler
+    // Run the controller
     await controller.createTestRun(mockRequest as Request, mockResponse as Response);
 
-    // We'll consider the test passing if the lambda handler returns without throwing
+    // We'll consider the test passing if the controller returns without throwing
     expect(mockResponse.status).toBeDefined();
     const body = (mockResponse.json as jest.Mock).mock.calls[0][0];
     expect(

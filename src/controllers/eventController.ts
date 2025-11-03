@@ -3,26 +3,18 @@ import Ajv from "ajv";
 import * as jwt from "jsonwebtoken";
 import addFormats from "ajv-formats";
 import betterErrors from "ajv-errors";
-import { EventTypesV2, EventTypesV3, TestResult, TestCaseResultStatus } from "../types/types";
+import config from "../config";
+import { TestStorage } from "../services/types";
+import { EventTypesV2, EventTypesV3, TestResult, TestCaseResultStatus } from "../services/types";
 import { eventFulfilledSchema, v3_0_EventFulfilledSchema } from "../schemas/responseSchema";
-// import { Database } from '../data/interfaces/Database';
-// import { DatabaseFactory } from '../data/factory'; 
-// TODO: Use Database instead of dbUtils
-import {
-  getTestData,
-  getTestResults,
-  saveTestCaseResult,
-  updateTestRunStatus,
-} from "../utils/dbUtils";
 import { calculateTestRunMetrics } from "../utils/testRunMetrics";
 import logger from "../utils/logger";
+import { Services } from '../services';
 
 // Initialize Ajv validator
 const ajv = new Ajv({ allErrors: true });
 addFormats(ajv);
 betterErrors(ajv);
-
-const JWT_SECRET = process.env.JWT_SECRET || "default_secret";
 
 const TEST_CASE_13_NAME = "Test Case 13: Respond to Asynchronous PCF Request";
 const TEST_CASE_14_NAME = "Test Case 14.B: Handle Rejected PCF Request";
@@ -30,16 +22,9 @@ const TEST_CASE_14_NAME = "Test Case 14.B: Handle Rejected PCF Request";
 const MANDATORY_VERSIONS = ["V2.2", "V2.3", "V3.0"];
 
 export class EventController {
-  // TODO: private db: Database;
-
-  constructor() {
-    // TODO: this.db = DatabaseFactory.create();
-  }
-
 
   /*
    * POST /auth/token - Authenticate client and provide JWT token
-   * Migrated from authForAsyncListener Lambda
   */
   async authToken(req: Request, res: Response): Promise<void> {
     const authHeader = req.headers.authorization;
@@ -58,7 +43,7 @@ export class EventController {
       return;
     }
 
-    const token = jwt.sign({ clientId }, JWT_SECRET, { expiresIn: "1h" });
+    const token = jwt.sign({ clientId }, config.JWT_SECRET, { expiresIn: "1h" });
 
     res.status(200).json({ access_token: token });
   };
@@ -66,9 +51,11 @@ export class EventController {
   /*
    * POST /2/event
    * POST /3/event - Handle callback events from the tested client API
-   * Migrated from asyncRequestListener Lambda
   */
   async handleEvent(req: Request, res: Response): Promise<void> {
+
+    const repository = (req.app.locals.services as Services).repository;
+
     try {
       // Log the entire event for debugging
       logger.info("Received event:", { url: req.url, body: req.body });
@@ -83,7 +70,7 @@ export class EventController {
       const match = requestEventId.match(/^(.+)-(.+)$/);
       const testRunId = match ? match[1] : requestEventId;
       const testCaseKey = match ? match[2] : "";
-      const testData = await getTestData(testRunId);
+      const testData = await repository.getTestData(testRunId);
 
       if (!testData) {
         throw new Error(`Test data not found for requestEventId: ${req.body.data.requestEventId}`);
@@ -163,15 +150,15 @@ export class EventController {
           };
         }
 
-        await saveTestCaseResult(testRunId, testResult, true);
+        await repository.saveTestCaseResult(testRunId, testResult, true);
 
         // Load updated test results and recalculate test run status
-        const existingTestRun = await getTestResults(testRunId);
+        const existingTestRun = await repository.getTestResults(testRunId);
         if (existingTestRun?.results) {
           const { testRunStatus, passingPercentage } = calculateTestRunMetrics(
             existingTestRun.results
           );
-          await updateTestRunStatus(
+          await repository.updateTestRunStatus(
             testRunId,
             testRunStatus,
             passingPercentage
@@ -236,15 +223,15 @@ export class EventController {
           };
         }
 
-        await saveTestCaseResult(testRunId, testResult, true);
+        await repository.saveTestCaseResult(testRunId, testResult, true);
 
         // Load updated test results and recalculate test run status
-        const existingTestRunForRejected = await getTestResults(testRunId);
+        const existingTestRunForRejected = await repository.getTestResults(testRunId);
         if (existingTestRunForRejected?.results) {
           const { testRunStatus, passingPercentage } = calculateTestRunMetrics(
             existingTestRunForRejected.results
           );
-          await updateTestRunStatus(
+          await repository.updateTestRunStatus(
             testRunId,
             testRunStatus,
             passingPercentage
