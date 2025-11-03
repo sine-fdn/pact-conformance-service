@@ -1,5 +1,4 @@
 import logger from "./logger";
-import { joinUrl } from "./urlUtils";
 
 // See https://docs.carbon-transparency.org/v2/#authresponsebody
 export interface TokenResponse {

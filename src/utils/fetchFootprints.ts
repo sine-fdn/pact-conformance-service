@@ -1,3 +1,4 @@
+import { joinUrl } from "./urlUtils";
 import { EventTypesV2, EventTypesV3, ApiVersion } from "../services/types";
 
 export const fetchFootprints = async (
@@ -7,7 +8,7 @@ export const fetchFootprints = async (
 ) => {
   const apiVersion = version.startsWith("V2") ? "2" : "3";
 
-  const footprintsUrl = `${baseUrl}/${apiVersion}/footprints`;
+  const footprintsUrl = joinUrl(baseUrl, `/${apiVersion}/footprints`);
   const response = await fetch(footprintsUrl, {
     headers: {
       Authorization: `Bearer ${accessToken}`,
