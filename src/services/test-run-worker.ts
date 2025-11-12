@@ -10,6 +10,7 @@ import { getAccessToken, fetchOpenIdTokenEndpoint } from "../utils/authUtils";
 import { generateV3TestCases } from "../test-cases/v3-test-cases";
 import { generateV2TestCases } from "../test-cases/v2-test-cases";
 import { runTestCase } from "../utils/runTestCase";
+import { joinUrl } from "../utils/urlUtils";
 
 
 export class TestRunWorker {
@@ -49,7 +50,7 @@ export class TestRunWorker {
 
     // Obtain token endpoint from .well-known if available
     const authTokenUrl = await fetchOpenIdTokenEndpoint(params.customAuthBaseUrl ?? params.baseUrl) ??
-      `${params.customAuthBaseUrl || params.baseUrl}/auth/token`;
+      joinUrl(params.customAuthBaseUrl || params.baseUrl, "/auth/token");
 
     // Add scope, audience and resource to the auth request body
     // Make sure to url encode things, otherwise it will not work

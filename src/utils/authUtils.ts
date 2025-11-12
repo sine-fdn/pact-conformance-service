@@ -1,4 +1,5 @@
 import logger from "./logger";
+import { joinUrl } from "./urlUtils";
 
 // See https://docs.carbon-transparency.org/v2/#authresponsebody
 export interface TokenResponse {
@@ -95,7 +96,8 @@ export const getAccessToken = async (
 // Get OpenID token_endpoint from .well-known configureation lookup
 export const fetchOpenIdTokenEndpoint = async (authBaseUrl: string): Promise<string | undefined> => {
   try {
-    const response = await fetch(`${authBaseUrl}/.well-known/openid-configuration`);
+    const wellKnownUrl = joinUrl(authBaseUrl, "/.well-known/openid-configuration");
+    const response = await fetch(wellKnownUrl);
     if (response.ok) {
       const data = await response.json();
       return data.token_endpoint;
@@ -103,6 +105,7 @@ export const fetchOpenIdTokenEndpoint = async (authBaseUrl: string): Promise<str
   } catch {
     // No OpenID configuration available, ignore error and return undefined
   }
-  logger.info(`No OpenID configuration found at ${authBaseUrl}/.well-known/openid-configuration`);
+  const wellKnownUrl = joinUrl(authBaseUrl, "/.well-known/openid-configuration");
+  logger.info(`No OpenID configuration found at ${wellKnownUrl}`);
   return undefined;
 };
