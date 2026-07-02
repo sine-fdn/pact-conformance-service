@@ -1,16 +1,17 @@
 name: Release PACT CLI binaries
 
 # Builds the standalone CLI binaries and attaches them to a GitHub release
-# when a tag is pushed. Tag-driven: push a tag like `v1.0.0` (the tag is the
-# version) and the release, its versioned assets, and the `latest` alias are
-# created for you.
+# when a tag is pushed. Tag-driven and on its own version track, separate from
+# the project's `v*` release tags: push a tag like `pact-cli-v1.0.0` (the tag
+# is the CLI version) and the release, its versioned assets, and the `latest`
+# alias are created for you.
 #
 # The release itself is the version index: `releases/latest/download/<asset>`
 # always resolves to the newest binary, and the releases API lists every
 # version.
 on:
   push:
-    tags: ["v*"]
+    tags: ["pact-cli-v*"]
   workflow_dispatch:
 
 permissions:
