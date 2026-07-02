@@ -25,6 +25,7 @@
  *   --resource         OAuth resource
  *   --adminEmail       Admin email address
  *   --adminName        Admin name
+ *   --output           Path to write the full test results as JSON
  */
 
 import dotenv from "dotenv";
@@ -33,9 +34,11 @@ dotenv.config();
 import express from "express";
 import { Server } from "http";
 import { randomBytes } from "crypto";
+import { writeFileSync } from "fs";
+import { resolve } from "path";
 import { TestRunWorker } from "./runner/test-run-worker";
 import { ConsoleTestStorage } from "./runner/console-test-storage";
-import { ApiVersion, TestCaseResultStatus, TestRunStartParams } from "./types";
+import { ApiVersion, TestCaseResultStatus, TestRunStartParams, TestRunWithResults } from "./types";
 import logger from "./logger";
 
 const PORT = process.env.PORT ?? "8080";
@@ -71,6 +74,7 @@ function parseTestCaseList(raw: string): number[] {
 type CommandLineArguments = TestRunStartParams & {
   verbose: boolean;
   insecure: boolean;
+  output?: string;
 };
 
 /**
@@ -141,6 +145,14 @@ function parseArgs(): CommandLineArguments {
         i++;
         break;
       }
+      case "--output": {
+        if (!value || value.startsWith("--")) {
+          usageError("--output requires a <path> value");
+        }
+        params.output = value;
+        i++;
+        break;
+      }
       case "--verbose":
         params.verbose = true;
         break;
@@ -153,9 +165,7 @@ function parseArgs(): CommandLineArguments {
         process.exit(0);
       default:
         if (arg.startsWith("--")) {
-          logger.error(`Unknown argument: ${arg}`);
-          printHelp();
-          process.exit(1);
+          usageError(`Unknown argument: ${arg}`);
         }
     }
   }
@@ -165,12 +175,19 @@ function parseArgs(): CommandLineArguments {
   const missing = required.filter((key) => !params[key as keyof TestRunStartParams]);
 
   if (missing.length > 0) {
-    logger.error(`Missing required arguments: ${missing.join(", ")}`);
-    printHelp();
-    process.exit(1);
+    usageError(`Missing required arguments: ${missing.join(", ")}`);
   }
 
   return params as CommandLineArguments;
+}
+
+// Report an invalid command line: a concise error on stderr plus a pointer to
+// --help, then exit. Full help is reserved for an explicit --help request so a
+// simple mistake (like a missing value) isn't buried under the whole usage text.
+function usageError(message: string): never {
+  console.error(`error: ${message}`);
+  console.error("Run with --help for usage.");
+  process.exit(1);
 }
 
 function printHelp(): void {
@@ -195,6 +212,7 @@ Optional Options:
   --adminEmail <email>         Admin email address (default: cli@example.com)
   --adminName <name>           Admin name (default: CLI User)
   --testCases <list>           Comma-separated numbers and ranges (e.g. 1-2,9). Omit to run all.
+  --output <path>              Write the full test results (run metadata + all results) as JSON to this file
   --verbose                    Show logs for passing tests in addition to failing ones
   --insecure                   Disable TLS certificate verification (not recommended; use only for localhost testing)  
   --help, -h                   Show this help message
@@ -297,11 +315,12 @@ async function main() {
   let server: Server | undefined;
   let exitCode = 1;
   try {
+    // Parse arguments first so a usage error isn't preceded by the banner,
+    // which would make a rejected command look like a run that started.
+    const args = parseArgs();
+
     logger.info("PACT Conformance Test CLI");
     logger.info("=".repeat(80));
-    
-    // Parse command-line arguments
-    const args = parseArgs();
 
     // Disable TLS certificate verification if --insecure flag is set
     if (args.insecure) {
@@ -331,7 +350,33 @@ async function main() {
 
     // Update final status based on any changes from callback events
     await storage.updateTestRunStatus(initial.testRunId);
-    
+
+    // Write the full results to a file if requested
+    if (args.output) {
+      const outputPath = resolve(args.output);
+      if (!outputPath.toLowerCase().endsWith(".json")) {
+        logger.warn(`Output path "${outputPath}" does not end in .json; writing JSON content anyway.`);
+      }
+      const runWithResults = await storage.getTestRunWithResults(initial.testRunId);
+      // The run record carries the full start params plus CLI-internal flags.
+      // Strip credentials and internal fields so they are never written to disk.
+      const {
+        clientId,
+        clientSecret,
+        verbose,
+        insecure,
+        output,
+        results,
+        ...runMeta
+      } = runWithResults as TestRunWithResults & Record<string, unknown>;
+      const sanitizedResults = {
+        ...runMeta,
+        results: results.map(({ log, ...r }) => r),
+      };
+      writeFileSync(outputPath, JSON.stringify(sanitizedResults, null, 2));
+      logger.info(`Test results written to ${outputPath}`);
+    }
+
     // Display results in console
     storage.displayTestResults(initial.testRunId);
     if (args.testCaseNumbers?.length) {
